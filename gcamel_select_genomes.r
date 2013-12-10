@@ -53,8 +53,8 @@ Srate <- c(0.123,0.045,0.668)/100/2 #weighted substitution rates
 
 file.genome <- 'genome.ffn'
 
-gcs.host <- as.numeric(unlist(strsplit(system("python gc_by_pos_2.py 0 1 genome.ffn",intern=TRUE),"\t")))
-gcs.host.genes <- do.call(cbind, strsplit(system("python gc_by_pos_2.py 1 1 genome.ffn",intern=TRUE),"\t"))
+gcs.host <- as.numeric(unlist(strsplit(system("python gc_by_pos_3.py 0 1 genome.ffn",intern=TRUE),"\t")))
+#gcs.host.genes <- do.call(cbind, strsplit(system("python gc_by_pos_2.py 1 1 genome.ffn",intern=TRUE),"\t"))
 
 list.xenes <- list.files(pattern='.fasta')
 tminmax <- NULL
@@ -74,17 +74,17 @@ oldgc <- NULL
 for (myfile in list.xenes) {
   file.xene <- myfile
   print(file.xene)
-  plot(xs,gc1.fit,xlim=c(0.2,0.8),ylim=c(0,1),xlab='GC1,GC2',ylab='GC3',type='l',col='pink',main=file.xene)
-  lines(xs,gc2.fit,col='purple')
+#  plot(xs,gc1.fit,xlim=c(0.2,0.8),ylim=c(0,1),xlab='GC1,GC2',ylab='GC3',type='l',col='pink',main=file.xene)
+#  lines(xs,gc2.fit,col='purple')
 
-  gcs.xene.get <- as.numeric(unlist(strsplit(system(paste("python gc_by_pos_2.py 1 ",reps,paste('"',file.xene,'"',sep=''),sep=" "),intern=TRUE),"\t")))
+  gcs.xene.get <- as.numeric(unlist(strsplit(system(paste("python gc_by_pos_3.py 0 ",reps,paste('"',file.xene,'"',sep=''),sep=" "),intern=TRUE),"\t")))
   gcs.xene <- matrix(gcs.xene.get,ncol=3,byrow=TRUE)
 
-  points(gcs.host[1],gcs.host[3],pch=3,col='red')
-  points(gcs.host[2],gcs.host[3],pch=3,col='red')
+#  points(gcs.host[1],gcs.host[3],pch=3,col='red')
+#  points(gcs.host[2],gcs.host[3],pch=3,col='red')
 
-  points(gcs.xene[,1],gcs.xene[,3],pch='.',col='pink')
-  points(gcs.xene[,2],gcs.xene[,3],pch='.',col='purple')
+#  points(gcs.xene[,1],gcs.xene[,3],pch='.',col='pink')
+#  points(gcs.xene[,2],gcs.xene[,3],pch='.',col='purple')
 
  for (rep in 1:reps) {
   print(rep);
@@ -119,10 +119,10 @@ for (myfile in list.xenes) {
 #     close.genome <- rbind(close.genome,c(which.min(genome.dists),min(genome.dists)))
 
   }
-  lines(fwd.xene.save[,1],fwd.xene.save[,3],col='red')
-  lines(fwd.xene.save[,2],fwd.xene.save[,3],col='red')
-  lines(rev.xene.save[,1],rev.xene.save[,3],col='pink')
-  lines(rev.xene.save[,2],rev.xene.save[,3],col='purple')
+  #lines(fwd.xene.save[,1],fwd.xene.save[,3],col='red')
+  #lines(fwd.xene.save[,2],fwd.xene.save[,3],col='red')
+  #lines(rev.xene.save[,1],rev.xene.save[,3],col='pink')
+  #lines(rev.xene.save[,2],rev.xene.save[,3],col='purple')
 
   dist.gc1 <- abs(fit.sigmoid.gc1(rev.xene.save[,1]) - rev.xene.save[,3])
   dist.gc2 <- abs(fit.sigmoid.gc2(rev.xene.save[,2]) - rev.xene.save[,3])
@@ -151,21 +151,21 @@ write.csv(oldgc,file=paste(tempfiles[1],"-oldgc.csv",sep=""))
 
 ##### post scrip interpretation #####
 
-master_out <- NULL
-
-for(f in list.xenes){
-  r <- which(tminmax[,1] == f)
-  mya_mean <- mean(as.numeric(tminmax[r,3:5]))
-  mya_sd <- sd(as.numeric(tminmax[r,3:5]))
-  n <- length(as.numeric(tminmax[r,3:5]))
-  error <- qnorm(0.975) * mya_sd/sqrt(n) ## checks out using ci command
-  left <- mya_mean - error
-  right <- mya_mean + error
-  out <- c(f,left,mya_mean,right)
-  master_out <- rbind(master_out, out)
-}
-
-write.table(master_out, 'dates_all_genes.txt', quote = F, sep = '\t')
+# master_out <- NULL
+# 
+# for(f in list.xenes){
+#   r <- which(tminmax[,1] == f)
+#   mya_mean <- mean(as.numeric(tminmax[r,3:5]))
+#   mya_sd <- sd(as.numeric(tminmax[r,3:5]))
+#   n <- length(as.numeric(tminmax[r,3:5]))
+#   error <- qnorm(0.975) * mya_sd/sqrt(n) ## checks out using ci command
+#   left <- mya_mean - error
+#   right <- mya_mean + error
+#   out <- c(f,left,mya_mean,right)
+#   master_out <- rbind(master_out, out)
+# }
+# 
+# write.table(master_out, 'dates_all_genes.txt', quote = F, sep = '\t')
 
 
 
