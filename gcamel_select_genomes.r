@@ -75,19 +75,19 @@ for (myfile in list.xenes) {
  for (rep in 1:reps) {
   n = n + 1
   print(rep);
-  rev.xene.save <- matrix(ncol = 3, nrow = reps)
+  rev.xene.save <- matrix(ncol = 3, nrow = 1000) ## nrows = number of time steps
 
-  delGC.rev <-c(0,0,0)
+  delGC.rev <- c(0,0,0)
   rev.xene <- gcs.xene[rep,]
 
   dist.gc1 <- rep.int(0,mya)
   dist.gc2 <- rep.int(0,mya)
-  dist.both <- rep.int(0,mya)
+#  dist.both <- rep.int(0,mya)
 
   for (i in 1:mya) {
     delGC.rev <- Srate * (tstv+0.5)/(tstv+1) * (gcs.host - rev.xene)
     rev.xene <- rev.xene - delGC.rev;
-    rev.xene.save[rep,] <- rev.xene
+    rev.xene.save[i,] <- rev.xene
   }
 
   dist.gc1 <- abs(fit.sigmoid.gc1(rev.xene.save[,1]) - rev.xene.save[,3])
