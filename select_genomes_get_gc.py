@@ -30,7 +30,7 @@ with gzip.open('select_genome_gc.txt.gz', 'w') as gc_out, open('select_genomes_l
             group = groups[strain+'.combined.fna']
             
             pfams = {} ## key = sequence name, value = pfam
-            with open('/Volumes/deming/cold_HGT_rd3/select_fna_cds/'+strain+'.combined.pfam.txt', 'r') as pfam_file:
+            with open('select_fna_cds/'+strain+'.combined.pfam.txt', 'r') as pfam_file:
                 for line in pfam_file:
                     if line.startswith('#') != True:
                         line = line.split()
@@ -62,7 +62,7 @@ with gzip.open('select_genome_gc.txt.gz', 'w') as gc_out, open('select_genomes_l
                     print >> large_gc_out, strain+'\t'+group+'\t'+key+'\t'+pfam+'\t'+str(seq_GC[key])+'\t'+str(mean_GC)+'\t'+str(sd_GC)
                     keep.add(key)
                         
-            with open('/Volumes/deming/cold_HGT_rd3/select_fna_cds/large_gc/'+strain+'.combined.nuc.largegc.fasta', 'w') as fasta_out:
+            with open('select_fna_cds/large_gc/'+strain+'.combined.nuc.largegc.fasta', 'w') as fasta_out:
                 for record in SeqIO.parse(open('select_fna_cds/'+f, 'r'), 'fasta'):
                     if record.id in keep:
                         print >> fasta_out, '>'+record.id+'\n'+record.seq

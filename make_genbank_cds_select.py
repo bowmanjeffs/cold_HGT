@@ -4,24 +4,13 @@ Created on Mon Nov 18 16:23:08 2013
 
 @author: Jeff
 """
-get = ['Aeromonas_salmonicida_A449_uid16723.combined.fna', \
-'Desulfotalea_psychrophila_LSv54_uid12751.combined.fna', \
-'Gramella_forsetii_KT0803_uid19061.combined.fna', \
-'Halalkalicoccus_jeotgali_B3_uid49517.combined.fna', \
-'Methanosarcina_mazei_Tuc01_uid176295.combined.fna', \
-'Octadecabacter_arcticus_238_uid19331.combined.fna', \
-'Shewanella_denitrificans_OS217_uid13390.combined.fna', \
-'Shewanella_sediminis_HAW-EB3_uid18789.combined.fna', \
-'Terriglobus_saanensis_SP1PR4_uid48971.combined.fna' \
-]
+get = ['Photobacterium_profundum_SS9_uid13128.combined.fna']
 
-get = []
-
-with open('/Volumes/deming/cold_random_HGT/select_genomes.final.groups', 'r') as group_file:
-    for line in group_file:
-        line = line.split('\t')
-        group = line[0]
-        get.append(group)
+#with open('select_genomes.final.groups', 'r') as group_file:
+#    for line in group_file:
+#        line = line.split('\t')
+#        group = line[0]
+#        get.append(group)
 
 def find_pros_with_trans(seqname, seq, trans_table, min_protein_length):
     answer = []
@@ -68,8 +57,8 @@ for f in get:
                     print >> temp_pro, '>'+seqname+'_'+str(start)+':'+str(end)+'_strand='+str(strand)
                     print >> temp_pro, pro
     
-            #hmmer = subprocess.Popen('hmmscan -E 1e-5 --tblout combined_fna_cds/'+name+'_'+str(i)+'.pfam.txt /volumes/deming/databases/Pfam-A.hmm temp'+'_'+name+'_pro.fasta', shell=True)
-            #hmmer.communicate()
+            hmmer = subprocess.Popen('hmmscan -E 1e-5 --tblout combined_fna_cds/'+name+'_'+str(i)+'.pfam.txt /volumes/deming/databases/Pfam-A.hmm temp'+'_'+name+'_pro.fasta', shell=True)
+            hmmer.communicate()
                     
             keep = set()
             with open('combined_fna_cds/'+name+'_'+str(i)+'.pfam.txt', 'r') as pfam_file:

@@ -5,6 +5,8 @@ code for psychrophile HGT project
 
 Scripts are run in the order given below.  Note that additional small scripts setting up directory structures and performing other simple tasks have not been included.
 
+#### aquisition time analysis ####
+
 ## select_genomes.py: finds closest mesophilic relatives to psychrophiles
 
 ## get_select_genomes.py: pulls the genomes selected by previous script
@@ -22,3 +24,14 @@ gc_by_pos.py: a dependency of gcamel_select_genomes.r.  Does the same thing as g
 ## combine_csv_files.py
 
 select_genomes_gc_amel_process.r
+
+#### gc anomaly and genome divergence comparison ####
+
+select_genomes_divergence.py: calculates compositional vectors and 16S distance matrix for genomes
+
+parse_blast_xml.py: dependency of select_genomes_divergence.py
+
+select_genomes_compositional_vector: evaluates distance between compositional vectors and compares with 16S distance matrix
+
+select_genomes_GC_anomaly.r: evaluates GC anomalies in genomes
+
