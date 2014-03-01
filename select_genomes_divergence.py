@@ -4,7 +4,7 @@ Created on Sun Jul 28 17:26:33 2013
 
 @author: Jeff
 
-v2 adds normalization according to Hao, 2004
+this version uses normalization according to Hao, 2004
 """
 
 import os

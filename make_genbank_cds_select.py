@@ -4,7 +4,7 @@ Created on Mon Nov 18 16:23:08 2013
 
 @author: Jeff
 """
-get = ['Photobacterium_profundum_SS9_uid13128.combined.fna']
+get = ['Psychroflexus_gondwanensis_ACAM_44.combined.fna']
 
 #with open('select_genomes.final.groups', 'r') as group_file:
 #    for line in group_file:
@@ -39,7 +39,6 @@ def find_pros_with_trans(seqname, seq, trans_table, min_protein_length):
     answer.sort()
     return answer
 
-import os
 import re
 from Bio import SeqIO
 import subprocess
@@ -47,9 +46,9 @@ import subprocess
 for f in get:
     name = re.sub('.fna', '', f)
     
-    with open('combined_fna_cds/'+name+'.pro.fasta', 'w') as output_pro, open('combined_fna_cds/'+name+'.nuc.fasta', 'w') as output_nuc:
+    with open('select_fna_cds/'+name+'.pro.fasta', 'w') as output_pro, open('select_fna_cds/'+name+'.nuc.fasta', 'w') as output_nuc:
         i = 0            
-        for record in SeqIO.parse('combined_fna/'+f, 'fasta'):
+        for record in SeqIO.parse('select_fna/'+f, 'fasta'):
             i = i + 1                
             cds_list = find_pros_with_trans(record.id, record.seq, 11, 50)
             with open('temp'+'_'+name+'_pro.fasta', 'w') as temp_pro:
@@ -57,11 +56,11 @@ for f in get:
                     print >> temp_pro, '>'+seqname+'_'+str(start)+':'+str(end)+'_strand='+str(strand)
                     print >> temp_pro, pro
     
-            hmmer = subprocess.Popen('hmmscan -E 1e-5 --tblout combined_fna_cds/'+name+'_'+str(i)+'.pfam.txt /volumes/deming/databases/Pfam-A.hmm temp'+'_'+name+'_pro.fasta', shell=True)
+            hmmer = subprocess.Popen('hmmscan -E 1e-5 --tblout select_fna_cds/'+name+'_'+str(i)+'.pfam.txt /volumes/deming/databases/Pfam-A.hmm temp'+'_'+name+'_pro.fasta', shell=True)
             hmmer.communicate()
                     
             keep = set()
-            with open('combined_fna_cds/'+name+'_'+str(i)+'.pfam.txt', 'r') as pfam_file:
+            with open('select_fna_cds/'+name+'_'+str(i)+'.pfam.txt', 'r') as pfam_file:
                 for line in pfam_file:
                     if line.startswith('#') == False:
                         line = line.split()
@@ -76,5 +75,5 @@ for f in get:
                     print >> output_nuc, dna
                         
             subprocess.call('rm temp'+'_'+name+'_pro.fasta', shell = True)
-        subprocess.call('cat combined_fna_cds/'+name+'_*.pfam.txt > combined_fna_cds/'+name+'.pfam.txt', shell = True)
-        subprocess.call('rm combined_fna_cds/'+name+'_*.pfam.txt', shell = True)                    
+        subprocess.call('cat select_fna_cds/'+name+'_*.pfam.txt > select_fna_cds/'+name+'.pfam.txt', shell = True)
+        subprocess.call('rm select_fna_cds/'+name+'_*.pfam.txt', shell = True)                    

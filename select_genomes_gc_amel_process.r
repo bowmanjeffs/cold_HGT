@@ -93,120 +93,126 @@ write.table(good_means, 'aquisition_means.txt', sep = '\t', quote = F, row.names
 
 ##### Analyze timescale #####
 
+sepkoski <- read.table('sepkoski_curve.txt', header = T, fill = T, sep = '\t')
+
 aquisition_dates <- read.table('aquisition_means.txt', sep = '\t')
 aquisition_dates_cold <- aquisition_dates[which(aquisition_dates[,4] == 'cold'),]
 aquisition_dates_control <- aquisition_dates[which(aquisition_dates[,4] == 'control'),]
 
-numeric_means <- as.numeric(aquisition_dates[,5])
-numeric_errors <- as.numeric(aquisition_dates[,8])
+## need to change these two lines to reflect the population you want to analyze
+numeric_means <- as.numeric(aquisition_dates_control[,5])
+numeric_errors <- as.numeric(aquisition_dates_control[,8])
+##
 
-#glacial <- c(1:55,105:183,253:333,421:458) # "climate modes of the phanerozoic"
-#glacial <- c(1:34, 65:72, 89:98, 112:125, 144:150, 136:141, 159:168, 183:184, 267:326, 349:361, 443:446) # Royer, 2005
-#glacial <- c(112:125, 144:150, 136:141, 159:168, 183:184, 267:326, 349:361, 443:446, 542, 580, 635:650, 660:720, 730:775) # Royer, 2005 and Koll 2011 excepting < 100 Ma
-#glacial_start <- c(112, 144, 136, 159, 183, 267, 349, 443, 542, 580, 635, 660, 730)
-#glacial_end <- c(125, 150, 141, 168, 184, 326, 361, 446, 542, 580, 650, 720, 775)
-glacial <- c(1:50,105:220,270:370,390:475, 635:650, 660:720, 730:775) # Veizer et al. 2000 + snowballs
-#glacial <- c(105:220,270:370,390:475,625:775) # Veizer et al. 2000, excluding most recent 100 yrs
+glacial <- c(1:50,105:220,270:370,390:475, 635:650) # Veizer et al. 2000
 glacial_hgt <- numeric_means[which(ceiling(numeric_means) %in% glacial)]
 
-m <- 775 # extent of glacial record, alternatively x intercept of polynomial fit
+m <- 650 # extent of glacial record, alternatively x intercept of polynomial fit
 f_glacial <- length(glacial) / m # fraction of time that is glacial
 f_glacial_hgt <- length(glacial_hgt) / length(numeric_means[which(numeric_means < m)])
 
 ## bin data and export for model fit in pydavis
-master_hist <- hist(numeric_means[which(numeric_means < m)], breaks = seq(0,m + 5,10))
 
+master_hist <- hist(numeric_means[which(numeric_means < m)], breaks = seq(0,m + 5,10))
 write.table(data.frame(master_hist$counts, master_hist$mids), 'master_dates_histogram.txt', quote = F, sep = '\t', col.names = F, row.names = F)
 
 ##### correcting for more glaciation in recent history - when HGT is more detectable #####
 
-## want deviation from a constant rate of HGT, as identified by best fit line pydavis
-## representing as fraction of anticipated HGT events - 1
+## internal detrend in place of external model fit using pydavis ##
 
-master_hist_norm <- c()
+library('pracma')
 
-a0 <- 207.220087607263
-a1 <- -0.55722808836733
-a2 <-  0.000374254659397898
-#a3 <- -5.85310237922088e-07
-#a4 <- 2.02779268632868e-10
+master_hist_norm <- pracma::detrend(master_hist$counts[which(master_hist$mids <= m)], tt = 'linear')
+master_hist_lm <- lm(master_hist$counts[which(master_hist$mids <= m)] ~ master_hist$mids[which(master_hist$mids <= m)])
+master_hist_anom <- master_hist_norm[which(master_hist_norm > 0)]
+master_hist_anom_time <- master_hist$mids[which(master_hist_norm > 0)]
 
-for(i in seq(1:max(which(master_hist$mids < m)))){
-  x <- master_hist$mids[i]
-  temp <- a0+a1*x+a2*x^2 ## curve fit with pydavis
-  if(temp < 1){temp <- 1}
-  if(temp <= master_hist$count[i]){
-    y_norm <- (master_hist$count[i] / temp) - 1
-  }else{y_norm <- 0}
-    print(c(y_norm, temp, master_hist$count[i]))
-    master_hist_norm <- append(master_hist_norm, y_norm)
-}
+pdf('not_normalized_HGT_occurrence.pdf', width = 8, height = 6)
 
-## plot HGT occurence
-
-plot(master_hist$counts ~ master_hist$mids,
+plot(master_hist$counts ~ master_hist$mids[which(master_hist$mids <= m)],
      type = 'n',
      ylab = 'HGT events',
      xlab = 'Ma',
-     ylim = c(0,300)
+     ylim = c(0,max(master_hist$counts) + 10)
 )
 
-rect(c(1,105,270,390,635,660),
+rect(c(1,105,270,390,635),
      c(0),
-     c(50,220,370,475,650,720),
-     c(300),
+     c(50,220,370,475,650),
+     c(max(master_hist$counts) + 10),
      border = F,
      col = 'grey')
 
-points(master_hist$counts ~ master_hist$mids, pch = 20)
+points(master_hist$counts ~ master_hist$mids[which(master_hist$mids <= m)], pch = 20)
+abline(master_hist_lm, col = 'red')
 
-curve(a0+a1*x+a2*x^2, add = T, col = 'red', lwd = 2)
-
+dev.off()
 
 ## plot normalized HGT occurrence
 
-plot(master_hist_norm ~ master_hist$mids[which(master_hist$mids < m)],
+pdf('normalized_HGT_occurrence.pdf', width = 8, height = 6)
+
+plot(master_hist_norm ~ master_hist$mids[which(master_hist$mids <= m)],
      type = 'n',
-     ylim = c(0,1),
+     ylim = c(min(master_hist_norm) - 1,max(master_hist_norm) + 1),
      ylab = 'Normalized HGT events',
      xlab = 'Ma',
      xlim = c(0,m)
      )
 
-rect(c(1,105,270,390,635,660),
-     c(0),
-     c(50,220,370,475,650,720),
-     c(1),
+rect(c(1,105,270,390,635),
+     c(min(master_hist_norm) - 1),
+     c(50,220,370,475,650),
+     c(max(master_hist_norm) + 1),
      border = F,
      col = 'grey')
 
-barplot(master_hist_norm,
+barplot(master_hist_norm[,1],
         width = 10,
         space = 0,
         add = T,
         col = 'black'
         )
 
+lines(sepkoski$p.Lmy * 100 ~ sepkoski$Date,
+     type = 'l',
+      col = 'red')
+
+dev.off()
+
 ## plotting complete
 
 f_glacial <- length(glacial) / m 
-glacial_hgt_norm <- sum(master_hist_norm[(ceiling(master_hist$mids) %in% glacial)])
-f_glacial_hgt_norm <- glacial_hgt_norm / sum(master_hist_norm, na.rm = T)
+glacial_hgt_norm <- sum(master_hist_anom[(ceiling(master_hist_anom_time) %in% glacial)])
+f_glacial_hgt_norm <- glacial_hgt_norm / sum(master_hist_anom, na.rm = T)
 
-## MC simulation
+sepkoski_spline <- spline(sepkoski$Date, sepkoski$q.Lmy, xout = master_hist$mids[which(master_hist$mids <= max(sepkoski$Date))])
+## species origination = p.Lmy according to Foote, 2000
+
+plot(master_hist_norm[1:length(sepkoski_spline$y)] ~ sepkoski_spline$y)
+
+sepkoski_lm <- lm(master_hist_norm[1:length(sepkoski_spline$y)] ~ sepkoski_spline$y)
+
+abline(sepkoski_lm)
+
+summary(sepkoski_lm)
+
+#### MC simulation ####
+
 n <- 1000000 ## number of simulations to run
 l <- 0
 g <- 0
 mcs <- vector("numeric",length = n)
 
-master_hist_mids <- master_hist$mids[which(master_hist$mids < m)]
-glacial_mids <- which(master_hist_mids %in% glacial)
+master_hist_mids <- master_hist_anom_time
+glacial_mids <- which(master_hist_anom_time %in% glacial)
+master_hist_anom_sum <- sum(master_hist_anom)
 
 for(i in seq(1,n)){
   print(i)
-  rn <- sample(master_hist_norm, length(master_hist_norm))
+  rn <- sample(master_hist_anom, length(master_hist_anom))
   mc_glacial_hgt_norm <- sum(rn[glacial_mids])
-  f_mc_glacial_hgt_norm <- mc_glacial_hgt_norm / sum(master_hist_norm)
+  f_mc_glacial_hgt_norm <- mc_glacial_hgt_norm / master_hist_anom_sum
   if(f_mc_glacial_hgt_norm < f_glacial_hgt_norm){ l <- l + 1 } else { g <- g + 1 }
   mcs[i] <- f_mc_glacial_hgt_norm
 }
@@ -215,13 +221,56 @@ hist_mcs <- hist(mcs, breaks = 100,
                  xlab = 'Fraction of events occurring during cold period',
                  main = NULL,
                  col = 'black',
-                 cex.axis = 1.4,
-                 cex.lab = 1.4)
+                 cex.axis = 1,
+                 cex.lab = 1)
 
 lines(c(f_glacial_hgt_norm, f_glacial_hgt_norm), c(0, 100000), col = 'orange', lwd = 2)
 
 box()
 
-mc_error <- qnorm(0.9875) * sd(mcs)
-mc_left <- mean(mcs) - mc_error
-mc_right <- mean(mcs) + mc_error
+print(g / n)
+
+
+#### which HGT pfams occur more during cold period than during warm periods? ####
+
+aquisition_dates_cold <- aquisition_dates[which(aquisition_dates[,4] == 'cold'),]
+
+pfam_glacial <- NULL
+pfam_warm <- NULL
+
+for(p in unique(as.character(aquisition_dates_cold$V3))){
+  temp <- aquisition_dates_cold[which(aquisition_dates_cold$V3 == p),]
+  temp_glacial <- length(which(round(temp$V5) %in% glacial))
+  temp_total <- length(temp$V3)
+  temp_warm <- temp_total - temp_glacial
+  pfam_glacial <- append(pfam_glacial, temp_glacial)
+  pfam_warm <- append(pfam_warm, temp_warm)
+  print(c(p, temp_glacial, temp_warm))
+}
+
+cold_pfam_glacial_warm <- data.frame(unique(as.character(aquisition_dates_cold$V3)), pfam_glacial, pfam_warm)
+
+cold_pfam_glacial_warm <- cold_pfam_glacial_warm[order(cold_pfam_glacial_warm[,2] - cold_pfam_glacial_warm[,3], decreasing = T),]
+
+write.table(cold_pfam_glacial_warm[1:50,], 'cold_pfam_glacial_warm.txt', row.names = F, col.names = F, quote = F, sep = '\t')
+
+## go through same exercise for control group, at least for those in top 50 of cold
+
+aquisition_dates_control <- aquisition_dates[which(aquisition_dates[,4] == 'control'),]
+
+pfam_glacial <- NULL
+pfam_warm <- NULL
+
+for(p in cold_pfam_glacial_warm[1:50,1]){
+  temp <- aquisition_dates_control[which(aquisition_dates_control$V3 == p),]
+  temp_glacial <- length(which(round(temp$V5) %in% glacial))
+  temp_total <- length(temp$V3)
+  temp_warm <- temp_total - temp_glacial
+  pfam_glacial <- append(pfam_glacial, temp_glacial)
+  pfam_warm <- append(pfam_warm, temp_warm)
+  print(c(p, temp_glacial, temp_warm))
+}
+
+control_pfam_glacial_warm <- data.frame(cold_pfam_glacial_warm[1:50,1], pfam_glacial, pfam_warm)
+
+write.table(control_pfam_glacial_warm, 'control_pfam_glacial_warm.txt', row.names = F, col.names = F, quote = F, sep = '\t')
