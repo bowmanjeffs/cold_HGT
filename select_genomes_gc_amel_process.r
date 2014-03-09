@@ -99,22 +99,27 @@ aquisition_dates <- read.table('aquisition_means.txt', sep = '\t')
 aquisition_dates_cold <- aquisition_dates[which(aquisition_dates[,4] == 'cold'),]
 aquisition_dates_control <- aquisition_dates[which(aquisition_dates[,4] == 'control'),]
 
-## need to change these two lines to reflect the population you want to analyze
-numeric_means <- as.numeric(aquisition_dates_control[,5])
-numeric_errors <- as.numeric(aquisition_dates_control[,8])
-##
+numeric_means_control <- as.numeric(aquisition_dates_control[,5])
+numeric_errors_control <- as.numeric(aquisition_dates_control[,8])
+
+numeric_means_cold <- as.numeric(aquisition_dates_cold[,5])
+numeric_errors_cold <- as.numeric(aquisition_dates_cold[,8])
 
 glacial <- c(1:50,105:220,270:370,390:475, 635:650) # Veizer et al. 2000
-glacial_hgt <- numeric_means[which(ceiling(numeric_means) %in% glacial)]
+#glacial <- c(1:55, 105:170, 250:330, 418:460, 635:650)
+glacial_hgt_cold <- numeric_means_cold[which(ceiling(numeric_means_cold) %in% glacial)]
+glacial_hgt_control <- numeric_means_control[which(ceiling(numeric_means_control) %in% glacial)]
 
 m <- 650 # extent of glacial record, alternatively x intercept of polynomial fit
 f_glacial <- length(glacial) / m # fraction of time that is glacial
-f_glacial_hgt <- length(glacial_hgt) / length(numeric_means[which(numeric_means < m)])
+#f_glacial_hgt_cold <- length(glacial_hgt) / length(numeric_means[which(numeric_means_cold < m)])
 
 ## bin data and export for model fit in pydavis
 
-master_hist <- hist(numeric_means[which(numeric_means < m)], breaks = seq(0,m + 5,10))
-write.table(data.frame(master_hist$counts, master_hist$mids), 'master_dates_histogram.txt', quote = F, sep = '\t', col.names = F, row.names = F)
+master_hist_cold <- hist(numeric_means_cold[which(numeric_means_cold < m)], breaks = seq(0,m + 5,10))
+master_hist_control <- hist(numeric_means_control[which(numeric_means_control < m)], breaks = seq(0,m + 5,10))
+
+#write.table(data.frame(master_hist$counts, master_hist$mids), 'master_dates_histogram.txt', quote = F, sep = '\t', col.names = F, row.names = F)
 
 ##### correcting for more glaciation in recent history - when HGT is more detectable #####
 
@@ -122,52 +127,65 @@ write.table(data.frame(master_hist$counts, master_hist$mids), 'master_dates_hist
 
 library('pracma')
 
-master_hist_norm <- pracma::detrend(master_hist$counts[which(master_hist$mids <= m)], tt = 'linear')
-master_hist_lm <- lm(master_hist$counts[which(master_hist$mids <= m)] ~ master_hist$mids[which(master_hist$mids <= m)])
-master_hist_anom <- master_hist_norm[which(master_hist_norm > 0)]
-master_hist_anom_time <- master_hist$mids[which(master_hist_norm > 0)]
+master_hist_norm_cold <- pracma::detrend(master_hist_cold$counts[which(master_hist_cold$mids <= m)], tt = 'linear')
+master_hist_lm_cold <- lm(master_hist_cold$counts[which(master_hist_cold$mids <= m)] ~ master_hist_cold$mids[which(master_hist_cold$mids <= m)])
+master_hist_anom_cold <- master_hist_norm_cold[which(master_hist_norm_cold > 0)]
+master_hist_anom_time_cold <- master_hist_cold$mids[which(master_hist_norm_cold > 0)]
 
-pdf('not_normalized_HGT_occurrence.pdf', width = 8, height = 6)
+master_hist_norm_control <- pracma::detrend(master_hist_control$counts[which(master_hist_control$mids <= m)], tt = 'linear')
+master_hist_lm_control <- lm(master_hist_control$counts[which(master_hist_control$mids <= m)] ~ master_hist_control$mids[which(master_hist_control$mids <= m)])
+master_hist_anom_control <- master_hist_norm_control[which(master_hist_norm_control > 0)]
+master_hist_anom_time_control <- master_hist_control$mids[which(master_hist_norm_control > 0)]
 
-plot(master_hist$counts ~ master_hist$mids[which(master_hist$mids <= m)],
+bin_comp_col <- colorRampPalette(c('black', 'violet', 'blue', 'green', 'yellow', 'orange', 'red'))(length(master_hist_norm_cold))
+
+plot(master_hist_norm_cold ~ master_hist_norm_control,
+     pch = 19,
+     col = bin_comp_col)
+
+summary(lm(master_hist_norm_cold ~ master_hist_norm_control))
+
+pdf('not_normalized_HGT_occurrence_cold.pdf', width = 8, height = 6)
+
+plot(master_hist_cold$counts ~ master_hist_cold$mids[which(master_hist_cold$mids <= m)],
      type = 'n',
      ylab = 'HGT events',
      xlab = 'Ma',
-     ylim = c(0,max(master_hist$counts) + 10)
+     ylim = c(0,max(master_hist_cold$counts) + 10)
 )
 
 rect(c(1,105,270,390,635),
      c(0),
      c(50,220,370,475,650),
-     c(max(master_hist$counts) + 10),
+     c(max(master_hist_cold$counts) + 10),
      border = F,
      col = 'grey')
 
-points(master_hist$counts ~ master_hist$mids[which(master_hist$mids <= m)], pch = 20)
-abline(master_hist_lm, col = 'red')
+points(master_hist_cold$counts ~ master_hist_cold$mids[which(master_hist_cold$mids <= m)], pch = 20)
+abline(master_hist_lm_cold, col = 'red')
 
 dev.off()
 
-## plot normalized HGT occurrence
+## plot cold normalized HGT occurrence
 
-pdf('normalized_HGT_occurrence.pdf', width = 8, height = 6)
+pdf('normalized_HGT_occurrence_cold.pdf', width = 8, height = 6)
 
-plot(master_hist_norm ~ master_hist$mids[which(master_hist$mids <= m)],
+plot(master_hist_norm_cold ~ master_hist_cold$mids[which(master_hist_cold$mids <= m)],
      type = 'n',
-     ylim = c(min(master_hist_norm) - 1,max(master_hist_norm) + 1),
+     ylim = c(min(master_hist_norm_cold) - 1,max(master_hist_norm_cold) + 1),
      ylab = 'Normalized HGT events',
      xlab = 'Ma',
      xlim = c(0,m)
      )
 
 rect(c(1,105,270,390,635),
-     c(min(master_hist_norm) - 1),
+     c(min(master_hist_norm_cold) - 1),
      c(50,220,370,475,650),
-     c(max(master_hist_norm) + 1),
+     c(max(master_hist_norm_cold) + 1),
      border = F,
      col = 'grey')
 
-barplot(master_hist_norm[,1],
+barplot(master_hist_norm_cold[,1],
         width = 10,
         space = 0,
         add = T,
@@ -180,11 +198,81 @@ lines(sepkoski$p.Lmy * 100 ~ sepkoski$Date,
 
 dev.off()
 
+## plot control normalized HGT occurrence
+
+pdf('normalized_HGT_occurrence_control.pdf', width = 8, height = 6)
+
+plot(master_hist_norm_control ~ master_hist_control$mids[which(master_hist_control$mids <= m)],
+     type = 'n',
+     ylim = c(min(master_hist_norm_control) - 1,max(master_hist_norm_control) + 1),
+     ylab = 'Normalized HGT events',
+     xlab = 'Ma',
+     xlim = c(0,m)
+)
+
+rect(c(1,105,270,390,635),
+     c(min(master_hist_norm_control) - 1),
+     c(50,220,370,475,650),
+     c(max(master_hist_norm_control) + 1),
+     border = F,
+     col = 'grey')
+
+barplot(master_hist_norm_control[,1],
+        width = 10,
+        space = 0,
+        add = T,
+        col = 'black'
+)
+
+lines(sepkoski$p.Lmy * 100 ~ sepkoski$Date,
+      type = 'l',
+      col = 'red')
+
+dev.off()
+
+## difference between these two
+
+pdf('diff_in_normalized_HGT_occurrence.pdf', width = 8, height = 6)
+
+plot(master_hist_norm_control ~ master_hist_control$mids[which(master_hist_control$mids <= m)],
+     type = 'n',
+     ylim = c(min(master_hist_norm_control) - 1,max(master_hist_norm_control) + 1),
+     ylab = 'Cold - control normalized HGT events',
+     xlab = 'Ma',
+     xlim = c(0,m)
+)
+
+rect(c(1,105,270,390,635),
+     c(min(master_hist_norm_control) - 1),
+     c(50,220,370,475,650),
+     c(max(master_hist_norm_control) + 1),
+     border = F,
+     col = 'grey')
+
+barplot(master_hist_norm_cold[,1] - master_hist_norm_control[,1],
+        width = 10,
+        space = 0,
+        add = T,
+        col = 'black'
+)
+
+lines(sepkoski$p.Lmy * 100 ~ sepkoski$Date,
+      type = 'l',
+      col = 'red')
+
+dev.off()
+
 ## plotting complete
 
 f_glacial <- length(glacial) / m 
-glacial_hgt_norm <- sum(master_hist_anom[(ceiling(master_hist_anom_time) %in% glacial)])
-f_glacial_hgt_norm <- glacial_hgt_norm / sum(master_hist_anom, na.rm = T)
+glacial_hgt_norm_cold <- sum(master_hist_anom_cold[(ceiling(master_hist_anom_time_cold) %in% glacial)])
+f_glacial_hgt_norm_cold <- glacial_hgt_norm_cold / sum(master_hist_anom_cold, na.rm = T)
+
+f_glacial <- length(glacial) / m 
+glacial_hgt_norm_control <- sum(master_hist_anom_control[(ceiling(master_hist_anom_time_control) %in% glacial)])
+f_glacial_hgt_norm_control <- glacial_hgt_norm_control / sum(master_hist_anom_control, na.rm = T)
+
+#### look for correlations with sepkoski curve ####
 
 sepkoski_spline <- spline(sepkoski$Date, sepkoski$q.Lmy, xout = master_hist$mids[which(master_hist$mids <= max(sepkoski$Date))])
 ## species origination = p.Lmy according to Foote, 2000
@@ -202,33 +290,33 @@ summary(sepkoski_lm)
 n <- 1000000 ## number of simulations to run
 l <- 0
 g <- 0
-mcs <- vector("numeric",length = n)
+mcs_cold <- vector("numeric",length = n)
 
-master_hist_mids <- master_hist_anom_time
-glacial_mids <- which(master_hist_anom_time %in% glacial)
-master_hist_anom_sum <- sum(master_hist_anom)
+master_hist_mids_cold <- master_hist_anom_time_cold # time periods with positive anomalies
+glacial_mids_cold <- which(master_hist_anom_time_cold %in% glacial)
+master_hist_anom_sum_cold <- sum(master_hist_anom_cold)
 
 for(i in seq(1,n)){
   print(i)
-  rn <- sample(master_hist_anom, length(master_hist_anom))
-  mc_glacial_hgt_norm <- sum(rn[glacial_mids])
-  f_mc_glacial_hgt_norm <- mc_glacial_hgt_norm / master_hist_anom_sum
-  if(f_mc_glacial_hgt_norm < f_glacial_hgt_norm){ l <- l + 1 } else { g <- g + 1 }
-  mcs[i] <- f_mc_glacial_hgt_norm
+  rn <- sample(master_hist_anom_cold, length(master_hist_anom_cold))
+  mc_glacial_hgt_norm_cold <- sum(rn[glacial_mids_cold])
+  f_mc_glacial_hgt_norm_cold <- mc_glacial_hgt_norm_cold / master_hist_anom_sum_cold
+  if(f_mc_glacial_hgt_norm_cold < f_glacial_hgt_norm_cold){ l <- l + 1 } else { g <- g + 1 }
+  mcs_cold[i] <- f_mc_glacial_hgt_norm_cold
 }
 
-hist_mcs <- hist(mcs, breaks = 100,
+hist_mcs_cold <- hist(mcs_cold, breaks = 100,
                  xlab = 'Fraction of events occurring during cold period',
-                 main = NULL,
+                 main = 'cold',
                  col = 'black',
                  cex.axis = 1,
                  cex.lab = 1)
 
-lines(c(f_glacial_hgt_norm, f_glacial_hgt_norm), c(0, 100000), col = 'orange', lwd = 2)
+lines(c(f_glacial_hgt_norm_cold, f_glacial_hgt_norm_cold), c(0, 100000), col = 'orange', lwd = 2)
 
 box()
 
-print(g / n)
+print(paste(c('cold', g, n, g / n)))
 
 
 #### which HGT pfams occur more during cold period than during warm periods? ####

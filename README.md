@@ -23,15 +23,18 @@ gc_by_pos.py: a dependency of gcamel_select_genomes.r.  Does the same thing as g
 
 ## combine_csv_files.py
 
+# we have provided to *gz files with the output of the amerlioration dating estimate.  These files are the input for the following r script.
+
 select_genomes_gc_amel_process.r
 
-#### gc anomaly and genome divergence comparison ####
+## select_genomes_GC_anomaly.r: evaluates GC anomalies in genomes
+
+#### genome divergence ####
 
 select_genomes_divergence.py: calculates compositional vectors and 16S distance matrix for genomes
 
 parse_blast_xml.py: dependency of select_genomes_divergence.py
 
-select_genomes_compositional_vector: evaluates distance between compositional vectors and compares with 16S distance matrix
+select_genomes_compositional_vector.r: evaluates distance between compositional vectors and compares with 16S distance matrix
 
-select_genomes_GC_anomaly.r: evaluates GC anomalies in genomes
 
