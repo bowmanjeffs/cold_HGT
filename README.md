@@ -4,7 +4,7 @@ cold_HGT
 code for psychrophile HGT project
 --------
 
-Scripts are run in the order given below.  Note that additional small scripts setting up directory structures and performing other simple tasks have not been included.
+Scripts are run in the order given below.  Note that additional small scripts setting up directory structures and performing other simple tasks have not been included.  Those script marked with '*' fall into this category.
 
 aquisition time analysis
 --------
