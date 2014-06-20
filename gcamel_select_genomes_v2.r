@@ -6,6 +6,7 @@ wd <- args[3]
 setwd(wd)
 
 rm(list=ls())
+
 # parameters needed:
 #  1) GC content of genome at each position (.ffn file)
 #  2) GC content of xene at each position (.fasta file)
@@ -30,10 +31,18 @@ rm(list=ls())
 #zunzun.com
 #finds gc3 given gc1
 fit.sigmoid.gc1 <- function(x_in) {
+  
+  ## Collins, 2013 values
 
-	a <- 1.4180794193642083E+00
-	b <- 1.2403719287318339E+02
-	c <- 7.5494898937434289E+00
+	#a <- 1.4180794193642083E+00
+	#b <- 1.2403719287318339E+02
+	#c <- 7.5494898937434289E+00
+  
+  ## Values, this study, R2 = 0.890
+  
+  a = 1.15055481710542
+  b = 220.766360569507
+  c = 9.33918836728851
 
 	y = a / (1.0 + b*exp(-1.0 * c * x_in))
 }
@@ -41,13 +50,44 @@ fit.sigmoid.gc1 <- function(x_in) {
 #zunzun.com
 #finds gc3 given gc2
 fit.sigmoid.gc2 <- function(x_in) {
+  
+  ## Collins, 2013 values
 
-	a = 1.0734349192542731E+00;
-	b = 2.7879639168098345E+02;
-	c = 1.3906208449024092E+01;
+	#a = 1.0734349192542731E+00
+	#b = 2.7879639168098345E+02
+	#c = 1.3906208449024092E+01
+  
+  ## Values, this study, R2 = 0.923
+  
+  a = 1.03670393959893
+  b = 568.49702381019
+  c = 16.2411289981262
 
-	y = a / (1.0 + b*exp(-1.0 * c * x_in));
+	y = a / (1.0 + b*exp(-1.0 * c * x_in))
 }
+
+## plot GC3 ~ GC1, GC2 for all genomes
+
+# genomes_gcs <- read.table('all_ffn_gc.txt')
+# plot(genomes_gcs[,3] ~ genomes_gcs[,1],
+#      pch = 19,
+#      cex = 0.6,
+#      col = 'green',
+#      xlab = 'GC1, GC2',
+#      ylab = 'GC3')
+# 
+# points(genomes_gcs[,3] ~ genomes_gcs[,2],
+#      pch = 19,
+#      cex = 0.6,
+#      col = 'orange')
+# 
+# points(fit.sigmoid.gc1(seq(0.18, 0.8, 0.01)) ~ seq(0.18, 0.8, 0.01),
+#        type = 'l',
+#        col = 'black')
+# 
+# points(fit.sigmoid.gc2(seq(0.18, 0.8, 0.01)) ~ seq(0.18, 0.8, 0.01),
+#        type = 'l',
+#        col = 'black')
 
 #### run parameters ####
 
@@ -59,7 +99,7 @@ Srate <- c(0.123,0.045,0.668)/100/2 # weighted substitution rates, see lawrence 
 
 file.genome <- 'genome.ffn'
 
-gcs.host <- as.numeric(unlist(strsplit(system("python gc_by_pos_3.py 0 1 genome.ffn",intern=TRUE),"\t")))
+gcs.host <- as.numeric(unlist(strsplit(system("python gc_by_pos_5.py 0 1 genome.ffn",intern=TRUE),"\t")))
 
 list.xenes <- list.files(pattern='.fasta')
 tminmax <- matrix(ncol = 4, nrow = reps * length(list.xenes))
@@ -86,7 +126,7 @@ for (myfile in list.xenes) {
   print(paste(file.xene, f, 'out of', length(list.xenes)))
 
   ## jacknife codons in xene [# reps] times
-  gcs.xene.get <- as.numeric(unlist(strsplit(system(paste("python gc_by_pos_3.py 0 ",reps,paste('"',file.xene,'"',sep=''),sep=" "),intern=TRUE),"\t")))
+  gcs.xene.get <- as.numeric(unlist(strsplit(system(paste("python gc_by_pos_5.py 0 ",reps,paste('"',file.xene,'"',sep=''),sep=" "),intern=TRUE),"\t")))
   gcs.xene <- matrix(gcs.xene.get,ncol=3,byrow=TRUE)
   
 #   plot(c(seq(-mya_max, mya_max, length = length(c(-5:5)))),

@@ -6,7 +6,7 @@ code for psychrophile HGT project
 
 Scripts are run in the order given below.  Note that additional small scripts setting up directory structures and performing other simple tasks have not been included.  Those script marked with '*' fall into this category.
 
-aquisition time analysis
+acquisition time analysis
 --------
 
 *select_genomes.py: finds closest mesophilic relatives to psychrophiles
