@@ -22,6 +22,11 @@ control_group <- groups[which(groups$V2 == 'control'),]
 
 special_group <- groups[which(groups$V2 == 'special'),]
 
+bad <- c("Methanococcoides_burtonii_DSM_6242_uid9634.combined",
+         "Methanosarcina_mazei_Tuc01_uid176295.combined",
+         "Methanosarcina_mazei_Tuc01_uid176295",
+         "Methanococcoides_burtonii_DSM_6242_uid9634")
+
 ## calculate compositional vector distance - can skip if you don't want to recalculate
 
 name <- '5mer_normalized_phylogeny_vector_output.txt.gz'
@@ -29,11 +34,15 @@ name <- '5mer_normalized_phylogeny_vector_output.txt.gz'
 d <- as.matrix(read.table(name,
                           header = T))
 
+d <- d[,-which(colnames(d) %in% bad)]
+
+d <- d + abs(min(d))
+
 d_trans <- d[which(rowSums(d) != 0),]
 
 #d_trans <- d_trans + abs(min(d_trans)) + 1
 
-d_dist_raw <- as.matrix(vegdist(t(d_trans), "euclidean"))
+d_dist_raw <- as.matrix(vegdist(t(d_trans), "bray"))
 
 d_dist <- d_dist_raw
 
@@ -62,11 +71,11 @@ for(n in groups$V1){
 d_dist <- d_dist[row_order, row_order]
 
 
-write.table(data.frame(d_dist), file = 'euclidean_dist.txt', quote = F)
+write.table(data.frame(d_dist), file = 'bray_dist.txt', quote = F)
 
 ## if you skipped the recalculation load earlier calc
 
-d_dist <- as.matrix(read.table('euclidean_dist.txt'))
+d_dist <- as.matrix(read.table('bray_dist.txt'))
 
 ##### 16S #####
 
@@ -82,6 +91,8 @@ row.names(ss) <- sub('\\.', '_', row.names(ss), perl = TRUE)
 
 colnames(ss) <- row.names(ss)
 
+ss <- ss[-which(row.names(ss) %in% bad), -which(colnames(ss) %in% bad)]
+
 row_order <- c()
 
 for(n in groups$V1){
@@ -92,48 +103,54 @@ ss <- ss[row_order, row_order]
 
 ##### normalize mean to 0 and var to 1 for both matrices #####
 
-d_dist[d_dist == 0] <- NA
-ss[ss == 0] <- NA
-
-ss_vector <- NULL
-
-for(r in seq(1, length(ss[,1]))){
-  for(c in seq(1, length(ss[1,]))){
-    ss_vector <- append(ss_vector, ss[c,r])
-  }
-}
-
-ss_mean <- mean(ss_vector, na.rm = T)
-ss_sd <- sd(ss_vector, na.rm = T)
+ss_mean <- mean(ss)
+ss_sd <- sd(ss)
 ss <- (ss - ss_mean) / ss_sd
-ss <- ss + abs(min(ss, na.rm = T))
-ss <- ss / max(ss, na.rm = T)
+ss <- ss + abs(min(ss))
+ss <- ss / max(ss)
 
 ## d_dist
 
-d_dist_vector <- NULL
-
-for(r in seq(1, length(d_dist[,1]))){
-  for(c in seq(1, length(d_dist[1,]))){
-    d_dist_vector <- append(d_dist_vector, d_dist[c,r])
-  }
-}
-
-d_dist_mean <- mean(d_dist_vector, na.rm = T)
-d_dist_sd <- sd(d_dist_vector, na.rm = T)
+d_dist_mean <- mean(d_dist)
+d_dist_sd <- sd(d_dist)
 d_dist <- (d_dist - d_dist_mean) / d_dist_sd
-d_dist <- d_dist + abs(min(d_dist, na.rm = T))
-d_dist <- d_dist / max(d_dist, na.rm = T)
+d_dist <- d_dist + abs(min(d_dist))
+d_dist <- d_dist / max(d_dist)
 
-plot(ss ~ d_dist)
+plot(ss ~ d_dist,
+     type = 'n',
+     ylab = '16S distance',
+     xlab = 'Compositional vector distance')
+
+points(ss[which(row.names(ss) %in% cold_group[,1]), which(colnames(ss) %in% cold_group[,1])] ~ 
+         d_dist[which(row.names(d_dist) %in% cold_group[,1]), which(colnames(d_dist) %in% cold_group[,1])],
+       col = 'blue')
+
+points(ss[which(row.names(ss) %in% control_group[,1]), which(colnames(ss) %in% control_group[,1])] ~ 
+         d_dist[which(row.names(d_dist) %in% control_group[,1]), which(colnames(d_dist) %in% control_group[,1])],
+       col = 'red')
+
+points(seq(0,1,0.01),
+       5e-10 * exp(23.996 * seq(0,1,0.01)),
+       #col = 'red',
+       type = 'l')
+
+hist(ss, breaks = 100)
+hist(d_dist, breaks = 100)
+
+write.table(cbind(as.vector(d_dist), as.vector(ss)), 'test.csv', sep = ',', quote = F, col.names = F, row.names = F)
+
+ss_pred <- 5e-10 * exp(23.996 * d_dist)
+divg <- ss_pred - ss
+
+divg <- divg + abs(min(divg))
+divg <- divg / max(divg)
 
 ##### generate plots #####
 
 color <- colorRampPalette(c('white', 'blue', 'green', 'yellow', 'orange', 'red'))(100)
 
 ## divg
-
-divg <- as.matrix(abs(d_dist - ss))
 
 pdf('divg_heatmap.pdf', width = 10, height = 10)
 
@@ -219,7 +236,7 @@ control_row_sum <- apply(divg_control, 1, sum, na.rm = TRUE)
 
 library(nortest)
 
-ad.test(c(cold_row_mean, control_row_mean)) # looks normal, I think - use t.test
+ad.test(c(cold_row_mean, control_row_mean)) # not normal
 
 t.test(cold_row_mean, control_row_mean) # not signif
 wilcox.test(cold_row_mean, control_row_mean) # signif
@@ -228,6 +245,22 @@ mean(control_row_mean)
 mean(cold_row_mean)
 
 boxplot(cold_row_mean, control_row_mean, notch = T)
+
+## mean of divg
+
+library(VarianceGamma)
+library(fitdistrplus)
+
+divg_cold_gamma <- fitdist(as.numeric(na.omit(c(divg_cold))), 'gamma', 'mle')
+divg_cold_gamma_mean <- vgMean(nu = divg_cold_gamma$estimate[1], theta = 1 / divg_cold_gamma$estimate[2])
+
+divg_control_gamma <- fitdist(as.numeric(na.omit(c(divg_control))), 'gamma', 'mle')
+divg_control_gamma_mean <- vgMean(nu = divg_control_gamma$estimate[1], theta = 1 / divg_control_gamma$estimate[2])
+
+divg_cold_norm <- fitdist(as.numeric(na.omit(c(divg_cold))), 'norm', 'mle')
+
+lr <- 2 * (divg_cold_norm$loglik - divg_cold_gamma$loglik)
+
 
 ## box plots of ss and d_dist and divG
 
